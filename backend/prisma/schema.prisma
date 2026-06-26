@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String?   @unique
+  avatarUrl     String?
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  vehicles      Vehicle[]
+  rides         Ride[]
+  devices       Device[]
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Vehicle {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  make        String
+  model       String
+  year        Int
+  licensePlate String  @unique
+  vin         String?  @unique
+  color       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rides       Ride[]
+
+  @@map("vehicles")
+}
+
+model Ride {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleId       String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  startLat        Float
+  startLng        Float
+  endLat          Float?
+  endLng          Float?
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+  distanceKm      Float?
+  durationSeconds Int?
+  status          RideStatus @default(ACTIVE)
+  score           Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  alerts          Alert[]
+
+  @@map("rides")
+}
+
+enum RideStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  EMERGENCY
+}
+
+model Alert {
+  id          String       @id @default(cuid())
+  rideId      String
+  ride        Ride         @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  type        AlertType
+  severity    AlertSeverity
+  message     String
+  metadata    Json?
+  acknowledged Boolean     @default(false)
+  acknowledgedAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@map("alerts")
+}
+
+enum AlertType {
+  SPEEDING
+  HARD_BRAKE
+  HARD_ACCELERATION
+  SHARP_TURN
+  GEOFENCE_BREACH
+  DEVICE_DISCONNECTED
+  LOW_BATTERY
+  CRASH_DETECTED
+  SOS
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+  EMERGENCY
+}
+
+model Device {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId        String       @unique
+  name            String
+  type            DeviceType
+  firmwareVersion String?
+  lastSeen        DateTime?
+  isOnline        Boolean      @default(false)
+  batteryLevel    Int?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("devices")
+}
+
+enum DeviceType {
+  OBD2
+  GPS_TRACKER
+  DASH_CAM
+  MOBILE_APP
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}

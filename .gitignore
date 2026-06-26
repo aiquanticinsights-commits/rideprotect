@@ -1,0 +1,41 @@
+# Dependencies
+backend/node_modules/
+mobile/.dart_tool/
+mobile/.packages
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+
+# Build outputs
+backend/dist/
+*.js.map
+
+# Environment files
+backend/.env
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+backend/mosquitto_log/
+
+# Dart/Flutter
+.pub-cache/
+.pub/
+mobile/coverage/
+
+# Gradle
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/app/build/
+mobile/android/key.properties

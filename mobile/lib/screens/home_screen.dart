@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
+import '../models/vehicle.dart';
 import '../services/api_client.dart';
+import '../services/vehicle_service.dart';
+import '../services/ride_service.dart';
 import 'login_screen.dart';
 import 'vehicles_screen.dart';
+import 'rides_screen.dart';
+import 'alerts_screen.dart';
+import 'ride_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ApiClient apiClient;
@@ -16,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   User? _user;
   bool _loading = true;
+  bool _startRideLoading = false;
 
   @override
   void initState() {
@@ -49,6 +56,84 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _startRide() async {
+    setState(() => _startRideLoading = true);
+    try {
+      final vehicleService = VehicleService(widget.apiClient);
+      final vehicles = await vehicleService.getVehicles();
+      if (!mounted) return;
+      setState(() => _startRideLoading = false);
+
+      if (vehicles.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Add a vehicle first before starting a ride'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      if (vehicles.length == 1) {
+        _createAndNavigate(vehicles.first);
+        return;
+      }
+
+      showModalBottomSheet(
+        context: context,
+        builder: (ctx) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Select Vehicle', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            ...vehicles.map((v) => ListTile(
+                  leading: const Icon(Icons.directions_car),
+                  title: Text(v.displayName),
+                  subtitle: v.licensePlate != null ? Text(v.licensePlate!) : null,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _createAndNavigate(v);
+                  },
+                )),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _startRideLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load vehicles: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _createAndNavigate(Vehicle vehicle) async {
+    setState(() => _startRideLoading = true);
+    try {
+      final rideService = RideService(widget.apiClient);
+      final ride = await rideService.startRide(vehicle.id);
+      if (!mounted) return;
+      setState(() => _startRideLoading = false);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RideDetailScreen(
+            apiClient: widget.apiClient,
+            rideId: ride.id,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _startRideLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start ride: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,6 +143,18 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
+      floatingActionButton: _startRideLoading
+          ? const FloatingActionButton(
+              onPressed: null,
+              child: CircularProgressIndicator(color: Colors.white),
+            )
+          : FloatingActionButton.extended(
+              onPressed: _startRide,
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('Start Ride'),
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _user == null
@@ -84,8 +181,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(_user!.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                    Text(_user!.email, style: TextStyle(color: Colors.grey[600])),
+                                    Text(_user!.fullName,
+                                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                    Text(_user!.email,
+                                        style: TextStyle(color: Colors.grey[600])),
                                   ],
                                 ),
                               ),
@@ -109,13 +208,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.route,
                         title: 'Rides',
                         subtitle: 'View ride history',
-                        onTap: () => _showSnackBar('Coming soon'),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RidesScreen(apiClient: widget.apiClient),
+                          ),
+                        ),
                       ),
                       _menuItem(
                         icon: Icons.warning_amber,
                         title: 'Alerts',
                         subtitle: 'Check safety alerts',
-                        onTap: () => _showSnackBar('Coming soon'),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AlertsScreen(apiClient: widget.apiClient),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -138,9 +247,5 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: onTap,
       ),
     );
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 }

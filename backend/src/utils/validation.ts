@@ -59,7 +59,8 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ValidationError('Invalid query parameters', error.flatten());
+        next(new ValidationError('Invalid query parameters', error.flatten()));
+        return;
       }
       next(error);
     }
@@ -73,7 +74,8 @@ export function validateParams<T>(schema: ZodSchema<T>) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ValidationError('Invalid route parameters', error.flatten());
+        next(new ValidationError('Invalid route parameters', error.flatten()));
+        return;
       }
       next(error);
     }

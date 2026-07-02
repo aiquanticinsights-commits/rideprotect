@@ -27,9 +27,7 @@ const endRideSchema = z.object({
 });
 
 const rideParamsSchema = z.object({
-  params: z.object({
-    id: z.string().cuid(),
-  }),
+  id: z.string().cuid(),
 });
 
 router.get('/', async (req, res, next) => {

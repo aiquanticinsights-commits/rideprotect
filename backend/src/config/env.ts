@@ -14,12 +14,13 @@ const envSchema = z.object({
 
   BCRYPT_ROUNDS: z.coerce.number().default(12),
 
+  REDIS_URL: z.string().optional(),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
   REDIS_PASSWORD: z.string().optional(),
   REDIS_DB: z.coerce.number().default(0),
 
-  MQTT_BROKER_URL: z.string().url(),
+  MQTT_BROKER_URL: z.string().url().optional(),
   MQTT_USERNAME: z.string().optional(),
   MQTT_PASSWORD: z.string().optional(),
   MQTT_CLIENT_ID: z.string().default('rideprotect-backend'),

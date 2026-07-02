@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError, isAppError } from '../utils/errors';
-import { getEnv } from '../config/env';
-
-const env = getEnv();
 
 export function errorHandler(
   error: Error,
@@ -35,7 +32,7 @@ export function errorHandler(
     return;
   }
 
-  const isDevelopment = env.NODE_ENV === 'development';
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   res.status(500).json({
     error: {

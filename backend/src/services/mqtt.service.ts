@@ -23,6 +23,10 @@ interface EventData {
 
 export function setupMqttListeners(): void {
   const client = getMqttClient();
+  if (!client) {
+    console.warn('?? MQTT not configured — skipping listener setup');
+    return;
+  }
 
   client.on('message', async (topic: string, payload: Buffer) => {
     try {

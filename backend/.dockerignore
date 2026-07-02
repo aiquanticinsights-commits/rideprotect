@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.git
+*.log
+mosquitto_log
+mosquitto_config

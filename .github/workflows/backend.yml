@@ -12,11 +12,36 @@ on:
       - "backend/**"
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rideprotect
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +54,16 @@ jobs:
 
       - run: npm ci
 
+      - run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rideprotect
+
       - run: npx prisma generate
 
       - run: npm run build
 
-      - run: npm run lint 2>/dev/null || true
+      - run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rideprotect
+          JWT_SECRET: ci-test-secret-key-at-least-32-chars!!
+          LOG_LEVEL: error

@@ -5,7 +5,11 @@ const env = getEnv();
 
 let client: MqttClient | null = null;
 
-export function getMqttClient(): MqttClient {
+export function getMqttClient(): MqttClient | null {
+  if (!env.MQTT_BROKER_URL) {
+    return null;
+  }
+
   if (!client) {
     const options: IClientOptions = {
       clientId: env.MQTT_CLIENT_ID,
@@ -42,6 +46,7 @@ export function getMqttClient(): MqttClient {
 
 export function publishMqtt(topic: string, payload: object, options?: { qos?: 0 | 1 | 2; retain?: boolean }): void {
   const c = getMqttClient();
+  if (!c) return;
   c.publish(topic, JSON.stringify(payload), options ?? { qos: 1 });
 }
 

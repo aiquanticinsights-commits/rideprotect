@@ -4,18 +4,22 @@ import { getEnv } from './env';
 const env = getEnv();
 
 function createRedisOptions(maxRetriesPerRequest: number | null): Record<string, unknown> {
+  const base = {
+    maxRetriesPerRequest,
+    connectTimeout: 5000,
+    lazyConnect: true,
+  };
   if (env.REDIS_URL) {
-    return { lazyConnect: true, maxRetriesPerRequest };
+    return { ...base };
   }
   return {
+    ...base,
     host: env.REDIS_HOST,
     port: env.REDIS_PORT,
     password: env.REDIS_PASSWORD,
     db: env.REDIS_DB,
-    maxRetriesPerRequest,
     retryStrategy: (times: number) => Math.min(times * 50, 2000),
     enableReadyCheck: true,
-    lazyConnect: true,
   };
 }
 

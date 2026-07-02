@@ -11,8 +11,13 @@ async function bootstrap() {
 
   logger.info('Starting server...');
 
-  await connectRedis();
-  logger.info('Redis connected');
+  try {
+    await connectRedis();
+    logger.info('Redis connected');
+    setupWorkers();
+  } catch (err) {
+    logger.error(err, 'Redis connection failed — running without Redis');
+  }
 
   const mqttClient = getMqttClient();
   if (mqttClient) {
@@ -22,7 +27,6 @@ async function bootstrap() {
   } else {
     logger.warn('MQTT not configured — IoT features disabled');
   }
-  setupWorkers();
 
   const app = createApp();
 
